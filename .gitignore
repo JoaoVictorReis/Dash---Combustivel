@@ -1,0 +1,4 @@
+DATA/RAW/*.csv
+DATA/PROCESSED/*.csv
+
+src/__pycache__/

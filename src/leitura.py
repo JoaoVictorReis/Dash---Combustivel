@@ -7,14 +7,8 @@ DIR_RAW= RAIZ / "DATA" / "RAW"
 DIR_PROCESS= RAIZ / "DATA" / "PROCESSED"
 
 
-def gerar_dados_exemplo(n_linhas: int = 5000, seed: int = 42) -> pd.DataFrame:
-    """
-    Gera um DataFrame fake, mas com a mesma estrutura dos dados da ANP,
-    pra você conseguir testar o pipeline inteiro (transform + dashboard)
-    ANTES de baixar os dados reais.
 
-    Depois é só trocar por `ler_csv_anp(caminho_do_arquivo_real)`.
-    """
+def gerar_dados_exemplo(n_linhas: int = 5000, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
 
     estados = ["SP", "RJ", "MG", "RS", "BA", "PR", "PE", "CE"]
