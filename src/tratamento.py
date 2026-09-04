@@ -31,8 +31,8 @@ def transformar_dados(tabela: pd.DataFrame):
     #remover linhas com preço ou data nulos, usando intertuples.
     antes = len(tabela)
     for linhas in tabela.itertuples():
-        if pd.isna(linhas.preco_venda) or pd.isna(linhas.data_coleta):
-           tabela = tabela.drop(linhas.Index) #remove linhas com preço e data nulos.
+        if pd.isna(linhas.preco_venda) or pd.isna(linhas.data_coleta): #Arruma essa validacao
+           tabela = tabela.drop(linhas.Index) #remove linhas com preço e data nulos. Arrumar essa linha, para que remova somente as linhas com preços vazios, não todas as linhas
     #da para fazer isso diretamente com o dropna e o subset, mas estou fazendo assim para treinar o intertuples.
     if antes != len(tabela):
         print(f"Removidas {antes - len(tabela)} linhas com preço ou data nulos.")

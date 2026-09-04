@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from pathlib import Path
 
 #Determinando o caminho do arquivo processado
@@ -38,12 +39,53 @@ st.sidebar.header("Filtros")
 produtos = sorted(tabela['produto'].unique())
 produto_selecionado = st.sidebar.selectbox("Produtos", produtos, index=None)
 
+estado = sorted(tabela['estado'].unique())
+estado_selecionado = st.sidebar.selectbox("Estados", estado, index=None)
+
+data_min = tabela['data_coleta'].min()
+data_max = tabela['data_coleta'].max()
+periodo_selecionado = st.sidebar.date_input("Período", [data_min, data_max], min_value=data_min, max_value=data_max)
+
+#Existe uma chance do usuario não selecionar nenhum produto e nem estado, pensando assim o pandas deve considerar que todos os valores devem ser considerados.
+if produto_selecionado is not None:
+    tabela = tabela[tabela['produto'] == produto_selecionado]
+
+if estado_selecionado is not None:
+    tabela = tabela[tabela['estado'] == estado_selecionado] #Aqui eu poderia ter usado um .query().
+
+#Aqui estamos filtrando a tabela e puxando apenas os valores que estão dentro do período selecionado.
+if len(periodo_selecionado) == 2:
+    tabela = tabela[(tabela['data_coleta'] >= pd.to_datetime(periodo_selecionado[0])) & (tabela['data_coleta'] <= pd.to_datetime(periodo_selecionado[1]))]
+# Aqui estamos utilizando um filtro booleano para selecionar apenas as linhas que estão dentro do período selecionado, utilizando o operador & para fazer a interseção das duas condições.
 
 
+#Criando uma tabela de resumo com as informações que queremos exibir no dashboard
+resumo = tabela.groupby(['produto', 'estado']).agg({'preco_venda': ['mean']}).reset_index()
+
+#resumo = tabela.groupby(['produto', 'estado']).mean(numeric_only=True).reset_index() <= Não funciona tão bem, pois o mean() não permite que você selecione apenas uma coluna para calcular a média, ai acaba que a média é calculada em até colunas que não fazem sentido.
+#resumo = tabela.gorupby(['produto', 'estado'])['preco_venda'].mean().reset_index() <= Seria a forma correta utilizando o .mean(), mas o .agg() é mais flexível, pois permite que você selecione várias colunas e aplique diferentes funções de agregação em cada uma delas, além de permitir que você renomeie as colunas resultantes.
+
+st.header("Resumo de Preços por Produto e Estado")
+st.dataframe(resumo.style.format({('preco_venda', 'mean'): "R${:,.2f}"}), use_container_width=True)
 
 
+#gerando um gráfico de comparação entre valores 
+st.header("Comparação de Preços")
+st.subheader("Aqui comparamos os preços médios dos combustiveis com base nos valores anteriores.")
+velocimetro = go.Figure(go.Indicator(mode = "gauge+number" , 
+                                        value= resumo[('preco_venda', 'mean')].mean(), 
+                                        number={'prefix': "R$", 'valueformat': ".2f"},
+                                        title={'text': "Preço Médio"}, 
+                                        gauge={'axis': {'range': [resumo[('preco_venda', 'mean')].min(), resumo[('preco_venda', 'mean')].max()], 'tickprefix': "R$", 'tickformat': ".2f"},
+                                               'bar': {'color': "blue"}}))
+
+st.plotly_chart(velocimetro, use_container_width=True)
 
 
-   
-    
-    
+#agrupar por data e produto, para gerar um gráfico de linha mostrando a evolução do preço médio ao longo do tempo.
+
+linhadotempo = tabela.groupby(['data_coleta', 'produto'])['preco_venda'].mean().reset_index()
+
+linhasgraph = px.line(linhadotempo, x='data_coleta', y=('preco_venda'), color='produto', title="Evolução do Preço Médio ao Longo do Tempo")
+st.plotly_chart(linhasgraph, use_container_width=True)
+
